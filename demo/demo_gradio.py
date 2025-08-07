@@ -323,15 +323,8 @@ def process_image_inference(session_state, test_image_input, file_input,
     dots_parser.min_pixels = min_pixels
     dots_parser.max_pixels = max_pixels
 
-    # ---------------- Prompt Handling ----------------
-    # Map the user-provided prompt text to a key that the parser can recognize.
-    if prompt_text in dict_promptmode_to_prompt:
-        prompt_mode = prompt_text
-    else:
-        __CUSTOM_KEY = "__custom_prompt__"
-        dict_promptmode_to_prompt[__CUSTOM_KEY] = prompt_text
-        prompt_mode = __CUSTOM_KEY
-    # -------------------------------------------------
+    # Use the prompt_text directly as prompt_mode, the parser will handle it appropriately
+    prompt_mode = prompt_text
     
     input_file_path = file_input if file_input else test_image_input
     
