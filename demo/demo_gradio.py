@@ -292,7 +292,7 @@ def parse_pdf_with_high_level_api(parser, pdf_path, prompt_mode):
 
 # ==================== Core Processing Function ====================
 def process_image_inference(session_state, test_image_input, file_input,
-                          prompt_mode, server_ip, server_port, min_pixels, max_pixels,
+                          prompt_text, server_ip, server_port, min_pixels, max_pixels,
                           fitz_preprocess=False
                           ):
     """Core function to handle image/PDF inference"""
@@ -322,6 +322,16 @@ def process_image_inference(session_state, test_image_input, file_input,
     dots_parser.port = server_port
     dots_parser.min_pixels = min_pixels
     dots_parser.max_pixels = max_pixels
+
+    # ---------------- Prompt Handling ----------------
+    # Map the user-provided prompt text to a key that the parser can recognize.
+    if prompt_text in dict_promptmode_to_prompt:
+        prompt_mode = prompt_text
+    else:
+        __CUSTOM_KEY = "__custom_prompt__"
+        dict_promptmode_to_prompt[__CUSTOM_KEY] = prompt_text
+        prompt_mode = __CUSTOM_KEY
+    # -------------------------------------------------
     
     input_file_path = file_input if file_input else test_image_input
     
@@ -548,19 +558,13 @@ def create_gradio_interface():
                 )
 
                 gr.Markdown("### ⚙️ Prompt & Actions")
-                prompt_mode = gr.Dropdown(
-                    label="Select Prompt",
-                    choices=["prompt_layout_all_en", "prompt_layout_only_en", "prompt_ocr"],
-                    value="prompt_layout_all_en",
-                )
-                
-                # Display current prompt content
+                # Editable prompt textbox (supports custom prompt input)
                 prompt_display = gr.Textbox(
-                    label="Current Prompt Content",
-                    value=dict_promptmode_to_prompt[list(dict_promptmode_to_prompt.keys())[0]],
-                    lines=4,
-                    max_lines=8,
-                    interactive=False,
+                    label="Prompt to Model",
+                    value=dict_promptmode_to_prompt['prompt_layout_all_en'],
+                    lines=8,
+                    max_lines=16,
+                    interactive=True,
                     show_copy_button=True
                 )
                 
@@ -654,12 +658,7 @@ def create_gradio_interface():
                         visible=False
                     )
         
-        # When the prompt mode changes, update the display content
-        prompt_mode.change(
-            fn=update_prompt_display,
-            inputs=prompt_mode,
-            outputs=prompt_display,
-        )
+
         
         # Show preview on file upload
         file_input.upload(
@@ -693,7 +692,7 @@ def create_gradio_interface():
             fn=process_image_inference,
             inputs=[
                 session_state, test_image_input, file_input,
-                prompt_mode, server_ip, server_port, min_pixels, max_pixels, 
+                prompt_display, server_ip, server_port, min_pixels, max_pixels, 
                 fitz_preprocess
             ],
             outputs=[
